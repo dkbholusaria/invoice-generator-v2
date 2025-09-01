@@ -1,0 +1,42 @@
+{
+  "name": "invoice-generator",
+  "version": "1.0.0",
+  "description": "Modern billing solution with real-time invoicing, digital payments, and automated accounting entries",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "vite",
+    "build": "vite build",
+    "electron:dev": "concurrently \"vite\" \"electron . --dev\"",
+    "electron:build": "vite build && electron-builder"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.3.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.11.0",
+    "date-fns": "^2.30.0",
+    "electron-store": "^8.1.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.2",
+    "qrcode": "^1.5.3",
+    "razorpay": "^2.9.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "recharts": "^2.10.3",
+    "tailwindcss": "^3.3.5",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^8.2.2",
+    "electron": "^27.1.0",
+    "electron-builder": "^24.6.4",
+    "postcss": "^8.5.6",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0"
+  }
+}
