@@ -55,12 +55,25 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
       setError(null);
       setPostSuccess(false);
 
+      console.log('Posting to Tally with data:', {
+        invoice: invoice.invoice_number,
+        customer: customer.name,
+        itemsCount: items.length,
+        items: items.map(item => ({
+          name: (item as any).item?.name || item.item_id,
+          quantity: item.quantity,
+          rate: item.rate,
+          total: item.total
+        }))
+      });
+
       // Post sales voucher to Tally
       await tallyService.postSalesVoucher(invoice, customer, items);
 
       setPostSuccess(true);
       setError(null);
     } catch (err) {
+      console.error('Error posting to Tally:', err);
       setError('Failed to post to Tally: ' + (err as Error).message);
       setPostSuccess(false);
     } finally {
