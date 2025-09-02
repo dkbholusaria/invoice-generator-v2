@@ -67,7 +67,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({
           <tbody>
             {items.map((item, index) => (
               <tr key={index} className="border-b border-gray-100">
-                <td className="py-2">{item.item_id}</td>
+                <td className="py-2">{item.item?.name || item.item_id}</td>
                 <td className="text-right py-2">{item.quantity}</td>
                 <td className="text-right py-2">{formatCurrency(item.rate)}</td>
                 <td className="text-right py-2">{formatCurrency(item.subtotal)}</td>

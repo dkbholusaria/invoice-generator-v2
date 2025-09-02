@@ -63,6 +63,12 @@ export interface InvoiceItem {
   total: number;
   created_at: string;
   updated_at: string;
+  item?: {
+    name: string;
+    description: string;
+    hsn_code?: string;
+    unit: string;
+  };
 }
 
 export interface Payment {

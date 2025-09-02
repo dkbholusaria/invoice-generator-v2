@@ -7,7 +7,6 @@ import Button from '../components/common/Button';
 import InvoiceItemsTable from '../components/invoice/InvoiceItemsTable';
 import InvoicePreview from '../components/invoice/InvoicePreview';
 import TallyIntegration from '../components/tally/TallyIntegration';
-import VoucherQueueMonitor from '../components/tally/VoucherQueueMonitor';
 
 const InvoiceDetail: React.FC = () => {
     const invoiceRef = useRef<HTMLDivElement>(null);
@@ -119,8 +118,12 @@ const InvoiceDetail: React.FC = () => {
                     </div>
                 </div>
                 <div className="space-y-6">
-                    <TallyIntegration onStatusChange={setTallyConnected} />
-                    {tallyConnected && <VoucherQueueMonitor />}
+                    <TallyIntegration
+                        onStatusChange={setTallyConnected}
+                        invoice={invoice}
+                        customer={invoice.customer}
+                        items={invoice.invoice_items}
+                    />
                 </div>
             </div>
         </div>
