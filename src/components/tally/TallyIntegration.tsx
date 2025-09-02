@@ -30,12 +30,34 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
     try {
       setIsChecking(true);
       setError(null);
+      console.log('Starting Tally connection check...');
+      
       const result = await tallyService.checkConnection();
+      console.log('Tally connection result:', result);
+      console.log('Result details:', {
+        connected: result.connected,
+        companyName: result.companyName,
+        hasCompanyName: !!result.companyName,
+        companyNameLength: result.companyName?.length || 0
+      });
+      
       setIsConnected(result.connected);
       setCompanyName(result.companyName || '');
       onStatusChange?.(result.connected);
+      
+      if (result.connected) {
+        console.log('Tally connected successfully. Company name:', result.companyName);
+        if (result.companyName) {
+          console.log('Company name set successfully:', result.companyName);
+        } else {
+          console.log('No company name received from Tally service');
+        }
+      } else {
+        console.log('Tally connection failed');
+      }
     } catch (err) {
-      setError('Failed to connect to Tally');
+      console.error('Tally connection error:', err);
+      setError('Failed to connect to Tally: ' + (err as Error).message);
       setIsConnected(false);
       setCompanyName('');
       onStatusChange?.(false);
@@ -119,7 +141,7 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
         <div className="flex items-center justify-between text-sm">
           <span>Company:</span>
           <span className="font-medium">
-            {companyName || 'Not configured'}
+            {companyName ? companyName : (isConnected ? 'Connected (No company name)' : 'Not configured')}
           </span>
         </div>
 
@@ -129,6 +151,53 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
           className="w-full"
         >
           {isChecking ? 'Checking Connection...' : 'Check Connection'}
+        </Button>
+
+        <Button
+          onClick={() => {
+            try {
+              console.log('=== TALLY DEBUG INFO ===');
+              console.log('Current Tally state:', {
+                isConnected,
+                companyName,
+                error,
+                isChecking
+              });
+              console.log('Tally service available:', !!tallyService);
+              console.log('Tally service methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(tallyService)));
+              console.log('=== END DEBUG INFO ===');
+            } catch (err) {
+              console.error('Debug Info button error:', err);
+            }
+          }}
+          variant="secondary"
+          className="w-full text-xs"
+        >
+          Debug Info
+        </Button>
+
+        <Button
+          onClick={() => {
+            try {
+              console.log('=== TESTING TALLY SERVICE ===');
+              console.log('Testing basic service availability...');
+              if (tallyService) {
+                console.log('✓ Tally service is available');
+                console.log('Service instance:', tallyService);
+                console.log('Service type:', typeof tallyService);
+                console.log('Service constructor:', tallyService.constructor.name);
+              } else {
+                console.log('✗ Tally service is NOT available');
+              }
+              console.log('=== END TEST ===');
+            } catch (err) {
+              console.error('Test button error:', err);
+            }
+          }}
+          variant="secondary"
+          className="w-full text-xs bg-yellow-100 hover:bg-yellow-200"
+        >
+          Test Service
         </Button>
 
         {isConnected && invoice && (
