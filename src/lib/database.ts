@@ -147,29 +147,50 @@ export const getInvoices = async () => {
 };
 
 export const getInvoice = async (id: string) => {
-  const { data, error } = await supabase
-    .from('invoices')
-    .select(`
-      *,
-      customer:customers(*),
-      invoice_items:invoice_items!inner(
-        id,
-        invoice_id,
-        item_id,
-        quantity,
-        rate,
-        tax_percentage,
-        subtotal,
-        tax_amount,
-        total,
-        item:items!inner(name, description, hsn_code, unit)
-      )
-    `)
-    .eq('id', id)
-    .single();
+  console.log('getInvoice called with ID:', id);
+  
+  try {
+    const { data, error } = await supabase
+      .from('invoices')
+      .select(`
+        *,
+        customer:customers(*),
+        invoice_items:invoice_items(
+          id,
+          invoice_id,
+          item_id,
+          quantity,
+          rate,
+          tax_percentage,
+          subtotal,
+          tax_amount,
+          total,
+          item:items(name, description, hsn_code, unit)
+        )
+      `)
+      .eq('id', id)
+      .single();
 
-  if (error) throw error;
-  return data;
+    console.log('Supabase response:', { data, error });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    console.log('Invoice data structure:', {
+      hasInvoice: !!data,
+      hasCustomer: !!data?.customer,
+      hasItems: !!data?.invoice_items,
+      customerKeys: data?.customer ? Object.keys(data.customer) : 'No customer',
+      itemsCount: data?.invoice_items?.length || 0
+    });
+
+    return data;
+  } catch (err) {
+    console.error('Error in getInvoice:', err);
+    throw err;
+  }
 };
 
 export const createInvoice = async (

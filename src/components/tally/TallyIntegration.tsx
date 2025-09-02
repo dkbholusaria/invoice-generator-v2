@@ -112,14 +112,14 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
         <div className="flex items-center justify-between text-sm">
           <span>Tally Server:</span>
           <span className="font-mono">
-            {process.env.TALLY_HOST || 'localhost'}:{process.env.TALLY_PORT || '9000'}
+            localhost:9000
           </span>
         </div>
 
         <div className="flex items-center justify-between text-sm">
           <span>Company:</span>
           <span className="font-medium">
-            {companyName || process.env.TALLY_COMPANY || 'Not configured'}
+            {companyName || 'Not configured'}
           </span>
         </div>
 

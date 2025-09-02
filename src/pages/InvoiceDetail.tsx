@@ -7,6 +7,7 @@ import Button from '../components/common/Button';
 import InvoiceItemsTable from '../components/invoice/InvoiceItemsTable';
 import InvoicePreview from '../components/invoice/InvoicePreview';
 import TallyIntegration from '../components/tally/TallyIntegration';
+import { supabase } from '../lib/supabase';
 
 const InvoiceDetail: React.FC = () => {
     const invoiceRef = useRef<HTMLDivElement>(null);
@@ -42,19 +43,93 @@ const InvoiceDetail: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [tallyConnected, setTallyConnected] = useState(false);
+    const [dbStatus, setDbStatus] = useState<any>(null);
+
+    // Add test function to check database
+    const testDatabase = async () => {
+        try {
+            console.log('Testing database connection...');
+            
+            // Test 1: Check if we can connect to invoices table
+            const { data: invoices, error: invoicesError } = await supabase
+                .from('invoices')
+                .select('id, invoice_number, customer_id')
+                .limit(5);
+            
+            if (invoicesError) {
+                console.error('Invoices table error:', invoicesError);
+            } else {
+                console.log('Available invoices:', invoices);
+            }
+
+            // Test 2: Check if we can connect to customers table
+            const { data: customers, error: customersError } = await supabase
+                .from('customers')
+                .select('id, name')
+                .limit(3);
+            
+            if (customersError) {
+                console.error('Customers table error:', customersError);
+            } else {
+                console.log('Available customers:', customers);
+            }
+
+            // Test 3: Check if we can connect to invoice_items table
+            const { data: items, error: itemsError } = await supabase
+                .from('invoice_items')
+                .select('id, invoice_id')
+                .limit(3);
+            
+            if (itemsError) {
+                console.error('Invoice items table error:', itemsError);
+            } else {
+                console.log('Available invoice items:', items);
+            }
+
+            // Store status for display
+            setDbStatus({
+                invoices: { data: invoices, error: invoicesError },
+                customers: { data: customers, error: customersError },
+                items: { data: items, error: itemsError }
+            });
+
+        } catch (err) {
+            console.error('Database test failed:', err);
+            setDbStatus({ error: err });
+        }
+    };
 
     useEffect(() => {
         loadInvoice();
+        testDatabase(); // Test database connection
     }, [id]);
 
     const loadInvoice = async () => {
         try {
+            console.log('Loading invoice with ID:', id);
             const data = await getInvoice(id!);
+            console.log('Invoice data loaded successfully:', data);
+            console.log('Customer data:', data.customer);
+            console.log('Invoice items:', data.invoice_items);
+            console.log('Data types:', {
+                invoiceType: typeof data,
+                customerType: typeof data.customer,
+                itemsType: typeof data.invoice_items,
+                itemsIsArray: Array.isArray(data.invoice_items)
+            });
+            
+            if (!data.customer) {
+                console.error('Customer data is missing from invoice response');
+            }
+            if (!data.invoice_items) {
+                console.error('Invoice items are missing from invoice response');
+            }
+            
             setInvoice(data);
             setError(null);
         } catch (err) {
-            setError('Failed to load invoice');
             console.error('Error loading invoice:', err);
+            setError(`Failed to load invoice: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
             setLoading(false);
         }
@@ -64,6 +139,14 @@ const InvoiceDetail: React.FC = () => {
         return (
             <div className="p-6">
                 <div className="text-center">Loading invoice...</div>
+                {dbStatus && (
+                    <div className="mt-4 p-4 bg-gray-100 rounded">
+                        <h3 className="font-medium mb-2">Database Status:</h3>
+                        <pre className="text-xs overflow-auto">
+                            {JSON.stringify(dbStatus, null, 2)}
+                        </pre>
+                    </div>
+                )}
             </div>
         );
     }

@@ -10,18 +10,29 @@ const PaymentQRCode: React.FC<PaymentQRCodeProps> = ({ invoice }) => {
   const [qrCode, setQRCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Bank details
+  // Add null check for invoice
+  if (!invoice) {
+    return (
+      <div className="text-center p-4">
+        <p className="text-gray-500 text-sm">Invoice data not available</p>
+      </div>
+    );
+  }
+
+  // Bank details with safe access to invoice.total
   const bankDetails = {
     bankName: "HDFC Bank",
     accountName: "Your Company Name",
     accountNumber: "XXXXXXXXXXXX",
     ifscCode: "HDFC0000XXX",
     branchName: "Your Branch Name",
-    amount: invoice.total
+    amount: invoice.total || 0
   };
 
   useEffect(() => {
-    generateBankQRCode();
+    if (invoice.id) {
+      generateBankQRCode();
+    }
   }, [invoice.id]);
 
   const generateBankQRCode = async () => {
@@ -59,7 +70,7 @@ const PaymentQRCode: React.FC<PaymentQRCodeProps> = ({ invoice }) => {
           <p>Account Number: {bankDetails.accountNumber}</p>
           <p>IFSC Code: {bankDetails.ifscCode}</p>
           <p>Branch: {bankDetails.branchName}</p>
-          <p className="font-medium mt-2">Amount: ₹{bankDetails.amount.toFixed(2)}</p>
+          <p className="font-medium mt-2">Amount: ₹{(bankDetails.amount || 0).toFixed(2)}</p>
         </div>
       </div>
     </div>
