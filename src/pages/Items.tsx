@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Item } from '../types/database';
-import { getItems, createItem } from '../lib/database';
+import { getItems, createItem, updateItem } from '../lib/database';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
@@ -9,6 +9,8 @@ import Input from '../components/common/Input';
 const Items: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -30,6 +32,25 @@ const Items: React.FC = () => {
     }
   };
 
+  const handleEdit = (item: Item) => {
+    setEditingItem(item);
+    setFormData({
+      name: item.name,
+      description: item.description,
+      hsn_code: item.hsn_code || '',
+      unit: item.unit,
+    });
+    setIsEditMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleAddNew = () => {
+    setEditingItem(null);
+    setFormData({ name: '', description: '', hsn_code: '', unit: '' });
+    setIsEditMode(false);
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -46,12 +67,18 @@ const Items: React.FC = () => {
     }
 
     try {
-      await createItem(formData);
+      if (isEditMode && editingItem) {
+        await updateItem(editingItem.id, formData);
+      } else {
+        await createItem(formData);
+      }
       setIsModalOpen(false);
       setFormData({ name: '', description: '', hsn_code: '', unit: '' });
+      setEditingItem(null);
+      setIsEditMode(false);
       loadItems();
     } catch (error) {
-      console.error('Error creating item:', error);
+      console.error('Error saving item:', error);
     }
   };
 
@@ -64,13 +91,28 @@ const Items: React.FC = () => {
       header: 'Created At',
       accessor: (item: Item) => new Date(item.created_at).toLocaleDateString(),
     },
+    {
+      header: 'Actions',
+      accessor: (item: Item) => (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEdit(item);
+          }}
+        >
+          Edit
+        </Button>
+      ),
+    },
   ];
 
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Items</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Add Item</Button>
+        <Button onClick={handleAddNew}>Add Item</Button>
       </div>
 
       <Table
@@ -81,14 +123,24 @@ const Items: React.FC = () => {
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Add Item"
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingItem(null);
+          setIsEditMode(false);
+        }}
+        title={isEditMode ? 'Edit Item' : 'Add Item'}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
+            <Button variant="secondary" onClick={() => {
+              setIsModalOpen(false);
+              setEditingItem(null);
+              setIsEditMode(false);
+            }}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>Save</Button>
+            <Button onClick={handleSubmit}>
+              {isEditMode ? 'Update' : 'Save'}
+            </Button>
           </>
         }
       >

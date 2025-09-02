@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Rate, Item } from '../types/database';
-import { getItems, createRate, getRates } from '../lib/database';
+import { getItems, createRate, getRates, updateRate } from '../lib/database';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
@@ -10,6 +10,8 @@ const Rates: React.FC = () => {
   const [rates, setRates] = useState<(Rate & { item: Item })[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingRate, setEditingRate] = useState<Rate | null>(null);
   const [formData, setFormData] = useState({
     item_id: '',
     rate: '',
@@ -41,6 +43,30 @@ const Rates: React.FC = () => {
     }
   };
 
+  const handleEdit = (rate: Rate) => {
+    setEditingRate(rate);
+    setFormData({
+      item_id: rate.item_id,
+      rate: rate.rate.toString(),
+      tax_percentage: rate.tax_percentage.toString(),
+      effective_from: new Date(rate.effective_from).toISOString().split('T')[0],
+    });
+    setIsEditMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleAddNew = () => {
+    setEditingRate(null);
+    setFormData({
+      item_id: '',
+      rate: '',
+      tax_percentage: '',
+      effective_from: new Date().toISOString().split('T')[0],
+    });
+    setIsEditMode(false);
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -58,11 +84,18 @@ const Rates: React.FC = () => {
     }
 
     try {
-      await createRate({
+      const rateData = {
         ...formData,
         rate: parseFloat(formData.rate),
         tax_percentage: parseFloat(formData.tax_percentage),
-      });
+      };
+
+      if (isEditMode && editingRate) {
+        await updateRate(editingRate.id, rateData);
+      } else {
+        await createRate(rateData);
+      }
+      
       setIsModalOpen(false);
       setFormData({
         item_id: '',
@@ -70,10 +103,12 @@ const Rates: React.FC = () => {
         tax_percentage: '',
         effective_from: new Date().toISOString().split('T')[0],
       });
-      // Reload rates after creating a new one
+      setEditingRate(null);
+      setIsEditMode(false);
+      // Reload rates after creating/updating
       loadRates();
     } catch (error) {
-      console.error('Error creating rate:', error);
+      console.error('Error saving rate:', error);
     }
   };
 
@@ -95,17 +130,32 @@ const Rates: React.FC = () => {
       accessor: (rate: Rate) => new Date(rate.effective_from).toLocaleDateString(),
     },
     {
-      header: 'Status',
-      accessor: (rate: Rate) =>
-        rate.effective_to ? 'Inactive' : 'Active',
-    },
-  ];
+              header: 'Status',
+        accessor: (rate: Rate) =>
+          rate.effective_to ? 'Inactive' : 'Active',
+      },
+      {
+        header: 'Actions',
+        accessor: (rate: Rate) => (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(rate);
+            }}
+          >
+            Edit
+          </Button>
+        ),
+      },
+    ];
 
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Rates</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Add Rate</Button>
+        <Button onClick={handleAddNew}>Add Rate</Button>
       </div>
 
       <Table
@@ -116,14 +166,24 @@ const Rates: React.FC = () => {
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Add Rate"
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingRate(null);
+          setIsEditMode(false);
+        }}
+        title={isEditMode ? 'Edit Rate' : 'Add Rate'}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
+            <Button variant="secondary" onClick={() => {
+              setIsModalOpen(false);
+              setEditingRate(null);
+              setIsEditMode(false);
+            }}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>Save</Button>
+            <Button onClick={handleSubmit}>
+              {isEditMode ? 'Update' : 'Save'}
+            </Button>
           </>
         }
       >
