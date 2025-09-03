@@ -22,6 +22,7 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
   const [companyName, setCompanyName] = useState<string>('');
   const [postSuccess, setPostSuccess] = useState(false);
 
+
   useEffect(() => {
     checkTallyConnection();
   }, []);
@@ -66,9 +67,16 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
     }
   };
 
+  
+
   const postToTally = async () => {
     if (!invoice || !customer || !items) {
       setError('Invoice data is missing');
+      return;
+    }
+
+    if (!companyName) {
+      setError('Company name is required. Please set your company name first.');
       return;
     }
 
@@ -77,9 +85,15 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
       setError(null);
       setPostSuccess(false);
 
+      console.log('=== POSTING TO TALLY DEBUG ===');
+      console.log('Company name state:', companyName);
+      console.log('Company name type:', typeof companyName);
+      console.log('Company name length:', companyName.length);
+      console.log('Company name trimmed:', companyName.trim());
       console.log('Posting to Tally with data:', {
         invoice: invoice.invoice_number,
         customer: customer.name,
+        companyName: companyName,
         itemsCount: items.length,
         items: items.map(item => ({
           name: (item as any).item?.name || item.item_id,
@@ -90,10 +104,11 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
       });
 
       // Post sales voucher to Tally
-      await tallyService.postSalesVoucher(invoice, customer, items);
+      await tallyService.postSalesVoucher(invoice, customer, items, companyName);
 
       setPostSuccess(true);
       setError(null);
+      console.log('=== TALLY POSTING SUCCESS ===');
     } catch (err) {
       console.error('Error posting to Tally:', err);
       setError('Failed to post to Tally: ' + (err as Error).message);
@@ -131,6 +146,8 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
       )}
 
       <div className="space-y-4">
+
+
         <div className="flex items-center justify-between text-sm">
           <span>Tally Server:</span>
           <span className="font-mono">
@@ -145,6 +162,19 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
           </span>
         </div>
 
+
+
+        {isConnected && companyName && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-800">
+              ✓ Connected to <strong>{companyName}</strong>
+            </p>
+            <p className="text-xs text-green-600 mt-1">
+              Ready to post invoices to Tally
+            </p>
+          </div>
+        )}
+
         <Button
           onClick={checkTallyConnection}
           disabled={isChecking}
@@ -153,52 +183,7 @@ const TallyIntegration: React.FC<TallyIntegrationProps> = ({
           {isChecking ? 'Checking Connection...' : 'Check Connection'}
         </Button>
 
-        <Button
-          onClick={() => {
-            try {
-              console.log('=== TALLY DEBUG INFO ===');
-              console.log('Current Tally state:', {
-                isConnected,
-                companyName,
-                error,
-                isChecking
-              });
-              console.log('Tally service available:', !!tallyService);
-              console.log('Tally service methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(tallyService)));
-              console.log('=== END DEBUG INFO ===');
-            } catch (err) {
-              console.error('Debug Info button error:', err);
-            }
-          }}
-          variant="secondary"
-          className="w-full text-xs"
-        >
-          Debug Info
-        </Button>
 
-        <Button
-          onClick={() => {
-            try {
-              console.log('=== TESTING TALLY SERVICE ===');
-              console.log('Testing basic service availability...');
-              if (tallyService) {
-                console.log('✓ Tally service is available');
-                console.log('Service instance:', tallyService);
-                console.log('Service type:', typeof tallyService);
-                console.log('Service constructor:', tallyService.constructor.name);
-              } else {
-                console.log('✗ Tally service is NOT available');
-              }
-              console.log('=== END TEST ===');
-            } catch (err) {
-              console.error('Test button error:', err);
-            }
-          }}
-          variant="secondary"
-          className="w-full text-xs bg-yellow-100 hover:bg-yellow-200"
-        >
-          Test Service
-        </Button>
 
         {isConnected && invoice && (
           <Button
